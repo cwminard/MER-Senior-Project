@@ -3,172 +3,263 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Therapeutic AI Chatbot – UI</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Therapeutic AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main id="app">
+  
+  <!-- MenuBar -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" id="brandHome" href="#welcome" data-go="welcome" aria-label="Therapeutic AI Home">
+      <svg class="brand-mark" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" fill="currentColor" opacity=".15"></circle>
+        <path d="M7 13l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <span class="brand-text">Therapeutic<span class="accent">AI</span></span>
+    </a>
 
-    <!-- Welcome Page -->
-    <section class="page center" data-view="welcome">
-      <h1>Welcome to the Therapeutic AI Chatbot</h1>
-      <button class="btn btn-primary" data-go="auth">Let’s Get Started</button>
-    </section>
+    <nav class="main-nav" aria-label="Primary">
+      <a href="#recorder" data-go="recorder" class="nav-link" id="navRecordLink">Record</a>
 
-    <!-- Auth Choice Page -->
-    <section class="page" data-view="auth">
-      <button class="link-back" data-go="welcome">Back</button>
-      <h2>Sign up / Log in</h2>
-      <div class="stack gap12">
-        <button class="btn btn-light" data-go="signup">Sign up</button>
-        <button class="btn btn-light" data-go="login">Log in</button>
+      <a href="#about"   data-go="about"   class="nav-link">About</a>
+      <a href="#contact" data-go="contact" class="nav-link">Contact</a>
+      <a href="#profile" data-go="profile" class="nav-link">My Profile</a>
+      <button class="btn btn--primary btn--sm" data-go="login" id="navAuthBtn">Sign in</button>
+    </nav>
+  </div>
+</header>
+
+
+  <main id="app" class="container">
+
+    <!-- WelcomePage -->
+    <section class="page hero center" data-view="welcome">
+      <div class="hero-content">
+        <h1 class="headline">Welcome to the Therapeutic AI Chatbot</h1>
+        <p class="subhead">Track mood, set goals, and get gentle, helpful guidance—private and on your terms.</p>
+        <div class="cta-row">
+          <button class="btn btn--primary" data-go="auth">Let’s Get Started</button>
+          <button class="btn btn--ghost" data-go="about">Learn more</button>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="stat">
+          <div class="stat-num">24/7</div>
+          <div class="stat-label">Support</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">98%</div>
+          <div class="stat-label">User satisfaction</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">HIPAA-ish*</div>
+          <div class="stat-label">Design mindset</div>
+        </div>
       </div>
     </section>
 
-    <!-- Log In Page -->
-    <section class="page" data-view="login">
-      <button class="link-back" data-go="auth">Back</button>
-      <h2>Log in for Therapeutic AI</h2>
+    <section class="page card" data-view="auth">
+      <button class="link-back" data-go="welcome">Back</button>
+      <h2 class="h2">Sign up or Log in</h2>
+      <div class="grid two">
+        <button class="btn btn--neutral" data-go="signup">Create an account</button>
+        <button class="btn btn--neutral" data-go="login">I already have an account</button>
+      </div>
+    </section>
+
+    <!-- Login -->
+    <section class="page card" data-view="login">
+      <button class="link-back" data-go="welcome">Back</button>
+      <h2 class="h2">Log in</h2>
       <form id="loginForm" class="form">
-        <label>Email:
-          <input type="email" name="email" placeholder="you@email.com" required />
-        </label>
-        <label>Password:
-          <input type="password" name="password" placeholder="••••••••" required />
-        </label>
-        <button class="btn btn-dark" type="submit">Submit</button>
-      </form>
-    </section>
-
-    <!-- Sign Up Page -->
-    <section class="page" data-view="signup">
-      <button class="link-back" data-go="auth">Back</button>
-      <h2>Sign Up for Therapeutic AI</h2>
-      <form id="signupForm" class="form">
-        <label>First Name:
-          <input name="first" required />
-        </label>
-        <label>Last Name:
-          <input name="last" required />
-        </label>
-        <label>Email:
-          <input type="email" name="email" required />
-        </label>
-        <label>Phone number:
-          <input name="phone" />
-        </label>
-        <label>Password:
-          <input type="password" name="password" required />
-        </label>
-        <label>Confirm Password:
-          <input type="password" name="confirm" required />
-        </label>
+        <div class="field">
+          <label for="li-email">Email</label>
+          <input id="li-email" type="email" name="email" placeholder="you@email.com" required />
+        </div>
+        <div class="field">
+          <label for="li-pass">Password</label>
+          <input id="li-pass" type="password" name="password" placeholder="••••••••" required />
+        </div>
         <div class="row end">
-          <button class="btn btn-dark" type="submit">Submit</button>
+          <button class="btn btn--primary" type="submit">Sign in</button>
         </div>
       </form>
     </section>
 
-    <!-- Preference Page -->
-    <section class="page" data-view="preferences">
-      <button class="link-back" data-go="signup">Back</button>
-      <h2>Fill in your preferences:</h2>
-      <form id="prefForm" class="form">
-        <label>What is your goal for Therapeutic AI?
-          <textarea name="goal" rows="3" placeholder="e.g., track mood, get coping tips"></textarea>
-        </label>
-        <label>How is your mood generally?
-          <textarea name="mood" rows="3" placeholder="e.g., usually anxious in the evenings"></textarea>
-        </label>
-        <div class="row end">
-          <button class="btn btn-dark" type="submit">Submit</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- Menu Page -->
-    <section class="page fullbleed" data-view="menu">
+    <!-- Signup -->
+    <section class="page card" data-view="signup">
       <button class="link-back" data-go="welcome">Back</button>
-      <h2>Menu</h2>
-      <div class="grid-2">
-        <button class="btn btn-pill" data-go="about">About Us</button>
-        <button class="btn btn-pill" data-go="upload">Upload File</button>
-        <button class="btn btn-pill" data-go="contact">Contact Us</button>
-        <button class="btn btn-pill" data-go="profile">My Profile</button>
-      </div>
+      <h2 class="h2">Create your account</h2>
+      <form id="signupForm" class="form two-col">
+        <div class="field">
+          <label for="su-first">First name</label>
+          <input id="su-first" name="first" required />
+        </div>
+        <div class="field">
+          <label for="su-last">Last name</label>
+          <input id="su-last" name="last" required />
+        </div>
+        <div class="field">
+          <label for="su-email">Email</label>
+          <input id="su-email" type="email" name="email" required />
+        </div>
+        <div class="field">
+          <label for="su-phone">Phone (optional)</label>
+          <input id="su-phone" name="phone" inputmode="tel" />
+        </div>
+        <div class="field">
+          <label for="su-pass">Password</label>
+          <input id="su-pass" type="password" name="password" required />
+          <small class="help">8+ chars recommended</small>
+        </div>
+        <div class="field">
+          <label for="su-confirm">Confirm password</label>
+          <input id="su-confirm" type="password" name="confirm" required />
+        </div>
+        <div class="row end">
+          <button class="btn btn--primary" type="submit">Create account</button>
+        </div>
+      </form>
     </section>
 
-    <!-- Upload Page -->
-    <section class="page" data-view="upload">
-      <button class="link-back" data-go="menu">Back</button>
-      <h2>Upload file below:</h2>
-      <div id="dropzone" class="dropzone" tabindex="0" aria-label="Drag and drop files here">
+    <!-- Preferences -->
+    <section class="page card" data-view="preferences">
+      <button class="link-back" data-go="signup">Back</button>
+      <h2 class="h2">Your preferences</h2>
+      <form id="prefForm" class="form">
+        <div class="field">
+          <label for="pf-goal">What is your goal for Therapeutic AI?</label>
+          <textarea id="pf-goal" name="goal" rows="3" placeholder="e.g., build daily reflection habit"></textarea>
+        </div>
+        <div class="field">
+          <label for="pf-mood">How is your mood generally?</label>
+          <textarea id="pf-mood" name="mood" rows="3" placeholder="e.g., mostly okay, stressed during exams"></textarea>
+        </div>
+        <div class="row end">
+          <button class="btn btn--primary" type="submit">Save & Continue</button>
+        </div>
+      </form>
+    </section>
+
+
+    <!-- UploadVideo -->
+    <section class="page card" data-view="upload">
+      <button class="link-back" data-go="recorder">Back</button>
+      <h2 class="h2">Upload a file</h2>
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Drag and drop file or browse">
         <div class="dz-inner">
           <div class="dz-icon" aria-hidden="true">⬆︎</div>
-          <p>Drag &amp; Drop file here</p>
-          <span class="muted">or</span>
-          <label class="btn btn-light dz-browse">
-            Browse Files
+          <p class="dz-title">Drag & Drop your file here</p>
+          <p class="muted">or</p>
+          <label class="btn btn--ghost dz-browse">
+            Browse files
             <input id="fileInput" type="file" hidden />
           </label>
-          <div id="fileName" class="file-name"></div>
+          <div id="fileName" class="file-name" aria-live="polite"></div>
         </div>
       </div>
     </section>
 
-    <!-- About Page -->
-    <section class="page" data-view="about">
-      <button class="link-back" data-go="menu">Back</button>
-      <h2>About our Therapeutic AI Chatbot</h2>
-      <p class="card">
-        Our Therapeutic AI Chatbot is an application that allows users to provide short video or images,
-        which the chatbot will analyze using sentiment analysis to provide the most fitting response
-        to improve your mood.
+    <!-- RecorderPage -->
+    <section class="page card" data-view="recorder">
+      <h2 class="h2">Record a short check-in</h2>
+      <p class="lead">Use your webcam to capture a quick mood update. You can upload it to your profile privately.</p>
+
+      <div class="recorder">
+        <video id="cam" playsinline autoplay muted></video>
+
+        <div class="controls row">
+          <button class="btn btn--primary" id="startRec">Start recording</button>
+          <button class="btn btn--ghost" id="stopRec" disabled>Stop</button>
+          <span class="timer" id="recTimer">00:00</span>
+        </div>
+
+        <div class="preview" id="previewWrap" hidden>
+          <video id="preview" controls></video>
+          <div class="row">
+            <a class="btn btn--neutral" id="downloadBtn" download="checkin.webm">Download</a>
+            <button class="btn btn--primary" id="uploadBtn">Upload to account</button>
+          </div>
+          <div class="muted" id="uploadMsg"></div>
+        </div>
+
+        <details class="help">
+          <summary>Trouble accessing camera?</summary>
+          <ul>
+            <li>Allow camera permission when prompted.</li>
+            <li>Close Zoom/Teams or other apps using your camera.</li>
+            <li>Safari: Site settings → Allow camera.</li>
+          </ul>
+        </details>
+      </div>
+    </section>
+
+
+
+    <!-- AboutPage -->
+    <section class="page card" data-view="about">
+      <button class="link-back" data-go="welcome">Back</button>
+      <h2 class="h2">About our Therapeutic AI Chatbot</h2>
+      <p class="lead">
+        Our chatbot analyzes short videos or images with sentiment techniques to offer supportive,
+        context-aware suggestions that can brighten your mood and build healthy habits.
       </p>
     </section>
 
-    <!-- Contact Page -->
-    <section class="page" data-view="contact">
-      <button class="link-back" data-go="menu">Back</button>
-      <h2>Need help or have any questions? Reach out to our team!</h2>
-      <div class="card">
-        <ul class="contacts">
-          <li>• Chelsea Minard – <a href="mailto:chmin11@morgan.edu">chmin11@morgan.edu</a></li>
-          <li>• Skylar Sawyer – <a href="mailto:sksaw1@morgan.edu">sksaw1@morgan.edu</a></li>
-          <li>• Tyler Austin – <a href="mailto:tyaus2@morgan.edu">tyaus2@morgan.edu</a></li>
-          <li>• Toyosi Adeniji – <a href="mailto:toade15@morgan.edu">toade15@morgan.edu</a></li>
-
-        </ul>
-      </div>
+    <!-- ContactPage -->
+    <section class="page card" data-view="contact">
+      <button class="link-back" data-go="welcome">Back</button>
+      <h2 class="h2">Contact us</h2>
+      <ul class="contacts">
+        <li>Chelsea Minard — <a href="mailto:chmin11@morgan.edu">chmin11@morgan.edu</a></li>
+        <li>Skylar Sawyer — <a href="mailto:sksaw1@morgan.edu">sksaw1@morgan.edu</a></li>
+        <li>Tyler Austin — <a href="mailto:tyaus2@morgan.edu">tyaus2@morgan.edu</a></li>
+        <li>Toyosi Adeniji — <a href="mailto:toade15@morgan.edu">toade15@morgan.edu</a></li>
+      </ul>
     </section>
 
-    <!-- My Profile Page -->
-    <section class="page" data-view="profile">
-      <button class="link-back" data-go="menu">Back</button>
-      <h2>My Profile</h2>
-      <form id="profileForm" class="form">
-        <label>Email:
-          <input type="email" name="email" />
-        </label>
-        <label>Password:
-          <input type="password" name="password" />
-        </label>
-        <label>Goals:
-          <input name="goal" />
-        </label>
-        <label>Mood:
-          <input name="mood" />
-        </label>
+    <!-- ProfilePage -->
+    <section class="page card" data-view="profile">
+      <button class="link-back" data-go="welcome">Back</button>
+      <h2 class="h2">My Profile</h2>
+      <form id="profileForm" class="form two-col">
+        <div class="field">
+          <label for="pf-email">Email</label>
+          <input id="pf-email" type="email" name="email" />
+        </div>
+        <div class="field">
+          <label for="pf-pass">Password</label>
+          <input id="pf-pass" type="password" name="password" />
+        </div>
+        <div class="field">
+          <label for="pf-goalin">Goals</label>
+          <input id="pf-goalin" name="goal" />
+        </div>
+        <div class="field">
+          <label for="pf-moodin">Mood</label>
+          <input id="pf-moodin" name="mood" />
+        </div>
         <div class="row end">
-          <button class="btn btn-dark" type="submit">Update</button>
+          <button class="btn btn--primary" type="submit">Update</button>
         </div>
       </form>
     </section>
 
   </main>
 
-  <script src="script.js"></script>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>© <span id="year"></span> TherapeuticAI.</span>
+      <nav class="footer-links" aria-label="Legal">
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
 </body>
 </html>
