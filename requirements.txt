@@ -1,0 +1,12 @@
+# Core dependencies
+opencv-python
+requests
+pandas
+nltk
+
+# Audio + Video processing
+pyaudio
+
+# Machine Learning / AI
+fer
+ollama
