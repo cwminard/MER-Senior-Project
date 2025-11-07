@@ -23,14 +23,13 @@ By leveraging multiple input modes, the system provides deeper emotional underst
 
 ## Getting Started
 
-### Part 1: Setup the Web App (Node.js)
+### 1. Run the Web Application (Node.js)
 1.  **Clone the Repository:**
     ```bash
     git clone https://github.com/cwminard/MER-Senior-Project.git
     cd MER-Senior-Project
     ```
 2.  **Install Node.js Dependencies:**
-    (This will read your `package.json` and install Express, SQLite, etc.)
     ```bash
     npm install
     ```
@@ -41,6 +40,39 @@ By leveraging multiple input modes, the system provides deeper emotional underst
     > Your web app is now running! You can visit it at `http://localhost:4000`.
 
 ---
+
+### 2. Run the AI Analysis Script (Python)
+
+This part runs the emotion analysis from your webcam.
+
+1.  **Create and Activate a Python Environment:**
+    (In the same project folder)
+    ```bash
+    # On Windows
+    python -m venv venv
+    .\venv\Scripts\activate
+    
+    # On macOS/Linux
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+2.  **Install Python Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Configure the Script:**
+    * **Add Your API Key:** Get a free API key from [AssemblyAI](https://www.assemblyai.com/) and paste it into the `headers` section of therapyAI.py.
+
+
+4. **Run the AI script**
+    ```bash
+    python therapyAI.py
+    ```
+    > This will open your webcam. Press 'q' to stop recording. The script will then print its full analysis to the terminal.
+---
+
 
 
 ## Repository Structure (Web App)
@@ -62,6 +94,6 @@ By leveraging multiple input modes, the system provides deeper emotional underst
 | Name | Role |
 | :--- | :--- |
 | Chelsea Minard | Backend Development |
-| Skylar Sawyer | Frontend Development |
+| Skylar Sawyer | Frontend & Database Development |
 | Tyler Austin | Mobile App Development |
 | Toyosi Adeniji | Documentation |
