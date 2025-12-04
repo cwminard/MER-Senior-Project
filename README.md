@@ -94,7 +94,7 @@ This section outlines the primary API endpoints used for user authentication and
 | `db.js`, `schema.sql` | Database configuration and SQL schema for SQLite setup. |
 | `package.json, package-lock.json` | Lists all Node.js dependencies (for `npm install`). |
 | `outputs/` | Stores generated audio, video, and result files during processing. |
-| `therapyAI.py (Deprecated)` | Previous core AI logic — performed emotion recognition, transcription, and sentiment analysis. (no longer used)|
+| `therapyAI.py` | core AI logic — performed emotion recognition, transcription, and sentiment analysis. (no longer used)|
 | `README.md` | Project overview and setup guide. |
 
 
