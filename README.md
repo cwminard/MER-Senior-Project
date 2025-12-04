@@ -17,8 +17,8 @@ By leveraging multiple input modes, the system provides deeper emotional underst
 ## Key Technologies
 
 * **Web Frontend:** HTML, CSS, JavaScript (for user accounts and in-browser recording)
-* **Web Backend:** Node.js, Express.js, SQLite
-* **AI Pipeline:** Python, OpenCV, NLTK (VADER), FER, Ollama, AssemblyAI
+* **Web Backend:** Node.js, Express.js, SQLite, navigator.mediaDevices.getUserMedia, MediaRecorder
+* **AI Pipeline:** Python, NLTK (VADER), FER, Ollama
 
 
 ## Getting Started
@@ -33,46 +33,17 @@ By leveraging multiple input modes, the system provides deeper emotional underst
     ```bash
     npm install
     ```
-3.  **Run the Web Server:**
+3.  **Create environment file:**
     ```bash
-    node server.js
+    cp server/.env.example server/.env
+    ```
+4.  **Run The Application**
+    ```bash
+    npm run dev
     ```
     > Your web app is now running! You can visit it at `http://localhost:4000`.
 
 ---
-
-### 2. Run the AI Analysis Script (Python)
-
-This part runs the emotion analysis from your webcam.
-
-1.  **Create and Activate a Python Environment:**
-    (In the same project folder)
-    ```bash
-    # On Windows
-    python -m venv venv
-    .\venv\Scripts\activate
-    
-    # On macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
-
-2.  **Install Python Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Configure the Script:**
-    * **Add Your API Key:** Get a free API key from [AssemblyAI](https://www.assemblyai.com/) and paste it into the `headers` section of therapyAI.py.
-
-
-4. **Run the AI script**
-    ```bash
-    python therapyAI.py
-    ```
-    > This will open your webcam. Press 'q' to stop recording. The script will then print its full analysis to the terminal.
----
-
 
 
 ## Repository Structure (Web App)
