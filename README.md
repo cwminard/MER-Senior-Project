@@ -1,5 +1,8 @@
 # TherapyAI - Multimodal Emotion Recognition (MER) Senior Project
 
+### Mobile App
+[![Mobile App Repo](https://img.shields.io/badge/Mobile%20App-MoodSnap-blue?style=for-the-badge)](https://github.com/yelofoot/MoodSnap)
+
 
 ## Overview
 TherapyAI is a **Multimodal Emotion Recognition (MER)** platform that combines **facial emotion detection** and **text-based sentiment analysis** to interpret human emotions more accurately.  
@@ -16,9 +19,33 @@ By leveraging multiple input modes, the system provides deeper emotional underst
 
 ## Key Technologies
 
-* **Web Frontend:** HTML, CSS, JavaScript (for user accounts and in-browser recording)
-* **Web Backend:** Node.js, Express.js, SQLite, navigator.mediaDevices.getUserMedia, MediaRecorder
-* **AI Pipeline:** Python, NLTK (VADER), FER, Ollama
+### Web Frontend:
+* **HTML, CSS, JavaScript:** Core web structure, styling, and interactivity for the user interface.
+* **Media APIs** ($navigator.mediaDevices.getUserMedia$, $MediaRecorder$): Used for **in-browser audio/video recording**.
+
+### Web Backend:
+* **Node.js, Express.js:** Server-side runtime and web application framework.
+* **SQLite:** Lightweight local database for user authentication and data storage.
+
+### AI Pipeline:
+* **AssemblyAI:** **Speech-to-Text** transcription, converting audio input to usable text.
+* **NLTK:** Natural Language Toolkit for **text-based sentiment analysis**.
+* **FER:** Library used for **facial emotion recognition** from video input.
+* **Ollama:** Local **LLM-powered reasoning** and high-level response generation.
+* **Python:** AI tasks/data processing.
+
+
+
+## System Requirements / Prerequisites
+
+Ensure you have the following software installed and configured before running the application:
+
+* **Node.js:** Version **18+**
+* **Ollama:** Must be installed and running locally to handle LLM reasoning tasks.
+* **AssemblyAI API Key:** Required for speech-to-text transcription.
+* **Browser:** Google Chrome is recommended for stable MediaRecorder API support.
+* **Python:** Version **3.10+**
+
 
 
 ## Getting Started
@@ -45,18 +72,29 @@ By leveraging multiple input modes, the system provides deeper emotional underst
 
 ---
 
+## Authentication & Data Flow
+
+This section outlines the primary API endpoints used for user authentication and managing user-specific data.
+
+1.  **Signup:** $\rightarrow$ `POST /api/signup`
+2.  **Login:** $\rightarrow$ `POST /api/login`
+3.  **Authenticated Requests**
+4.  **Preferences:** $\rightarrow$ `PUT /api/preferences`
+5.  **Profile:** $\rightarrow$ `GET /api/me` and `PUT /api/me`
+6.  **Uploads:** $\rightarrow$ `POST /api/upload`
+
+---
 
 ## Repository Structure (Web App)
 | File/Folder | Description |
 | :--- | :--- |
-| `index.html`, `styles.css` | The frontend that runs in the browser. |
-| `script.js` | Handles frontend logic, page navigation, and API requests. |
-| `therapyAI.py` | Core AI logic — performs emotion recognition, transcription, and sentiment analysis. |
-| `server.js` | Node.js backend that handles routes, uploads, and database communication. |
-| `db.js`, `schema.sql` | Configures and creates the SQLite database. |
-| `package.json` | Lists all Node.js dependencies (for `npm install`). |
-| `outputs/` | Stores generated audio, video, and result files. |
-| `requirements.txt` | Contains a list of required Python dependencies. |
+| `index.html`, `styles.css` | Main HTML structure and CSS styling (UI). |
+| `script.js` | Frontend logic for **camera/mic recording**, API calls, and UI updates. |
+| `/server/server.js` | Core Node.js backend handling authentication, API routing, processing, and database interactions. |
+| `db.js`, `schema.sql` | Database configuration and SQL schema for SQLite setup. |
+| `package.json, package-lock.json` | Lists all Node.js dependencies (for `npm install`). |
+| `outputs/` | Stores generated audio, video, and result files during processing. |
+| `therapyAI.py (Deprecated)` | Previous core AI logic — performed emotion recognition, transcription, and sentiment analysis. (no longer used)|
 | `README.md` | Project overview and setup guide. |
 
 
