@@ -1,6 +1,6 @@
 # COSC490-MER — Therapeutic AI (Local Dev)
 
-This repository contains the Therapeutic AI demo app (web frontend + Python analysis + small Flask API). The app records short webcam videos, sends them to a local server for transcription, sentiment and (optionally) facial-emotion analysis, and returns a therapeutic chatbot response.
+This repository contains the Therapeutic AI demo app (web frontend + Python analysis + small Flask API). The app records short webcam videos, sends them to a local server for transcription, sentiment and facial-emotion analysis, and returns a therapeutic chatbot response.
 
 This README covers mandatory installation steps and how to run the project on Windows (PowerShell). It also documents optional components used by the project.
 
@@ -117,9 +117,6 @@ B) Run the Node/Express server (legacy/alternate)
 npm install
 npm run dev
 ```
-
-This runs `server/server.js` (if you prefer that server). Note the frontend is static and can be served by either server; the Flask server integrates the Python analysis functions directly.
-
 ---
 
 ## Usage (developer flow)
@@ -157,7 +154,6 @@ Chat mode
 
 ---
 
-Tell me which of the above you'd like next and I will implement it.
 # TherapyAI - Multimodal Emotion Recognition (MER) Senior Project
 
 ### Mobile App
