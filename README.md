@@ -160,6 +160,9 @@ Chat mode
 Tell me which of the above you'd like next and I will implement it.
 # TherapyAI - Multimodal Emotion Recognition (MER) Senior Project
 
+### Mobile App
+[![Mobile App Repo](https://img.shields.io/badge/Mobile%20App-MoodSnap-blue?style=for-the-badge)](https://github.com/yelofoot/MoodSnap)
+
 
 ## Overview
 TherapyAI is a **Multimodal Emotion Recognition (MER)** platform that combines **facial emotion detection** and **text-based sentiment analysis** to interpret human emotions more accurately.  
@@ -178,7 +181,7 @@ By leveraging multiple input modes, the system provides deeper emotional underst
 
 * **Web Frontend:** HTML, CSS, JavaScript (for user accounts and in-browser recording)
 * **Web Backend:** Node.js, Express.js, SQLite
-* **AI Pipeline:** Python, NLTK (VADER), FER, Ollama, AssemblyAI
+* **AI Pipeline:** Python, OpenCV, NLTK (VADER), FER, Ollama, AssemblyAI
 
 
 ## Getting Started
@@ -193,59 +196,41 @@ By leveraging multiple input modes, the system provides deeper emotional underst
     ```bash
     npm install
     ```
-3.  **Run the Web Server:**
+3.  **Create environment file:**
     ```bash
-    node server.js
+    cp server/.env.example server/.env
+    ```
+4.  **Run The Application**
+    ```bash
+    npm run dev
     ```
     > Your web app is now running! You can visit it at `http://localhost:4000`.
 
 ---
 
-### 2. Run the AI Analysis Script (Python)
+## Authentication & Data Flow
 
-This part runs the emotion analysis from your webcam.
+This section outlines the primary API endpoints used for user authentication and managing user-specific data.
 
-1.  **Create and Activate a Python Environment:**
-    (In the same project folder)
-    ```bash
-    # On Windows
-    python -m venv venv
-    .\venv\Scripts\activate
-    
-    # On macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
+1.  **Signup:** $\rightarrow$ `POST /api/signup`
+2.  **Login:** $\rightarrow$ `POST /api/login`
+3.  **Authenticated Requests**
+4.  **Preferences:** $\rightarrow$ `PUT /api/preferences`
+5.  **Profile:** $\rightarrow$ `GET /api/me` and `PUT /api/me`
+6.  **Uploads:** $\rightarrow$ `POST /api/upload`
 
-2.  **Install Python Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Configure the Script:**
-    * **Add Your API Key:** Get a free API key from [AssemblyAI](https://www.assemblyai.com/) and paste it into the `headers` section of therapyAI.py.
-
-
-4. **Run the AI script**
-    ```bash
-    python therapyAI.py
-    ```
-    > This will open your webcam. Press 'q' to stop recording. The script will then print its full analysis to the terminal.
 ---
-
-
 
 ## Repository Structure (Web App)
 | File/Folder | Description |
 | :--- | :--- |
-| `index.html`, `styles.css` | The frontend that runs in the browser. |
-| `script.js` | Handles frontend logic, page navigation, and API requests. |
-| `therapyAI.py` | Core AI logic — performs emotion recognition, transcription, and sentiment analysis. |
-| `server.js` | Node.js backend that handles routes, uploads, and database communication. |
-| `db.js`, `schema.sql` | Configures and creates the SQLite database. |
-| `package.json` | Lists all Node.js dependencies (for `npm install`). |
-| `outputs/` | Stores generated audio, video, and result files. |
-| `requirements.txt` | Contains a list of required Python dependencies. |
+| `index.html`, `styles.css` | Main HTML structure and CSS styling (UI). |
+| `script.js` | Frontend logic for **camera/mic recording**, API calls, and UI updates. |
+| `/server/server.js` | Core Node.js backend handling authentication, API routing, processing, and database interactions. |
+| `db.js`, `schema.sql` | Database configuration and SQL schema for SQLite setup. |
+| `package.json, package-lock.json` | Lists all Node.js dependencies (for `npm install`). |
+| `outputs/` | Stores generated audio, video, and result files during processing. |
+| `therapyAI.py` | core AI logic — performed emotion recognition, transcription, and sentiment analysis. (no longer used)|
 | `README.md` | Project overview and setup guide. |
 
 
