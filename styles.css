@@ -52,6 +52,9 @@ body{
   cursor: pointer;
   transition: background .2s ease, transform .04s ease, border-color .2s ease, box-shadow .2s ease;
 }
+.btn-animated{ transition: transform .14s cubic-bezier(.2,.9,.2,1), box-shadow .18s ease; }
+.btn-animated:focus-visible{ box-shadow: 0 6px 22px rgba(36,99,235,.12), 0 0 0 4px var(--ring); }
+.btn-animated:active{ transform: scale(.98); }
 .btn:active{ transform: translateY(1px); }
 .btn--sm{ --py: 8px; --px: 12px; font-size: .92rem; }
 .btn--primary{ background: var(--primary); color:#fff; }
@@ -59,6 +62,38 @@ body{
 .btn--ghost{ background: color-mix(in oklab, #fff 75%, transparent); color: var(--ink); border-color: var(--border); }
 .btn--neutral{ background:#fff; border:1px solid var(--border); }
 .btn:focus-visible{ outline:none; box-shadow: 0 0 0 4px var(--ring); }
+
+/* Recording state: make the record button larger and pulse */
+.btn.recording{ position: relative; transform: scale(1.04); box-shadow: 0 10px 30px rgba(36,99,235,.12); }
+.btn.recording::after{
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px; border-radius: 50%;
+  right: 12px; top: 10px;
+  background: #ff4d4f; box-shadow: 0 0 0 rgba(255,77,79,.6);
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse{
+  0%{ box-shadow: 0 0 0 0 rgba(255,77,79,.65); }
+  70%{ box-shadow: 0 0 0 10px rgba(255,77,79,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(255,77,79,0); }
+}
+
+/* subtle hover glow for primary buttons */
+.btn--primary.btn-animated:hover{ transform: translateY(-3px) scale(1.02); box-shadow: 0 18px 40px rgba(36,99,235,.12); }
+
+/* chat history bubbles */
+#chatHistory div{ transition: transform .12s ease, opacity .12s ease; }
+#chatHistory div:hover{ transform: translateY(-3px); }
+
+/* Loading spinner for buttons */
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+.btn.loading{ pointer-events: none; opacity: .95; }
+.btn.loading::after{ content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; }
+.btn--primary.loading::after{ border: 2px solid rgba(255,255,255,0.25); border-top-color: #fff; animation: spin .75s linear infinite; }
+.btn--ghost.loading::after{ border: 2px solid rgba(36,99,235,0.12); border-top-color: var(--primary); animation: spin .75s linear infinite; }
+.btn--neutral.loading::after{ border: 2px solid rgba(0,0,0,0.06); border-top-color: var(--muted); animation: spin .75s linear infinite; }
 
 /*  Hero   */
 .hero{ min-height: 88vh; display:grid; align-items:center; grid-template-columns: 1.1fr .9fr; gap: 24px; }

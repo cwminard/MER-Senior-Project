@@ -1,83 +1,16 @@
-import cv2 as cv
-import pyaudio
-import wave
 import time
-import threading
-
-def record_video_and_audio():
-    cap = cv.VideoCapture(0)
-    fourcc = cv.VideoWriter_fourcc(*'mp4v')
-    out = cv.VideoWriter('C:\\Users\\chels\\Desktop\\COSC490-MER\\outputs\\video\\output.mp4', fourcc, 20.0, (640, 480))
-
-    CHUNK = 4096  # Increased chunk size for smoother audio
-    FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    RATE = 44100
-    WAVE_OUTPUT_FILENAME = "C:\\Users\\chels\\Desktop\\COSC490-MER\\outputs\\audio\\output.wav"
-    frames = []
-
-    p = pyaudio.PyAudio()
-    stream = None
-
-    audio_started = False
-    audio_running = True
-
-    def audio_record():
-        nonlocal stream, frames, audio_running
-        stream = p.open(format=FORMAT,
-                        channels=CHANNELS,
-                        rate=RATE,
-                        input=True,
-                        frames_per_buffer=CHUNK)
-        print("* recording audio")
-        while audio_running:
-            data = stream.read(CHUNK, exception_on_overflow=False)
-            frames.append(data)
-
-    audio_thread = threading.Thread(target=audio_record)
-    audio_thread.start()
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            print("Can't receive frame (stream end?). Exiting ...")
-            break
-        out.write(frame)
-        cv.imshow('frame', frame)
-
-        if cv.waitKey(1) == ord('q'):
-            break
-
-    # Cleanup video
-    cap.release()
-    out.release()
-    cv.destroyAllWindows()
-
-    # Cleanup audio
-    audio_running = False
-    audio_thread.join()
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-    wf.setnchannels(CHANNELS)
-    wf.setsampwidth(p.get_sample_size(FORMAT))
-    wf.setframerate(RATE)
-    wf.writeframes(b''.join(frames))
-    wf.close()
-    print("* done recording audio")
+import sys
 
 import requests
 import time
 
-def transcribe_audio():
+def transcribe_audio(filepath):
   base_url = "https://api.assemblyai.com"
 
   headers = {
       "authorization": "6a35340cac1c443e8e4bbc1d027a3ad5"
   }
-  with open("outputs/audio/output.wav", "rb") as f:
+  with open(filepath, "rb") as f:
     response = requests.post(base_url + "/v2/upload",
                             headers=headers,
                             data=f)
@@ -101,7 +34,7 @@ def transcribe_audio():
     transcript_text = transcription_result['text']
 
     if transcription_result['status'] == 'completed':
-      print("Transcription completed.")
+      print("Transcription completed.", file=sys.stderr)
       return transcript_text
       # with open("transcript.txt", "w") as file:
       #   file.write(transcript_text) # we don't necessarily need to write it into a file
@@ -131,33 +64,157 @@ def determine_sentiment(text):
 from fer.fer import FER
 from fer.classes import Video
 import pandas as pd
-def analyze_video_emotions():
-    emotion_detector = FER(mtcnn=True)
-    video = Video("C:\\Users\\chels\\Desktop\\COSC490-MER\\outputs\\video\\output.mp4")
 
-
-    emotions = video.analyze(emotion_detector, display=False, frequency=15)
-    df = pd.DataFrame(emotions)
-
-
+def analyze_video_emotions(video_path):
+  emotion_detector = FER(mtcnn=True)
+  video = Video(video_path)
+  try:
+    frames_emotions = video.analyze(emotion_detector, display=False, frequency=15)
+    # frames_emotions may be empty if no faces/frames were detected
+    if not frames_emotions:
+      print("Video emotion analysis returned no frames/metadata.", file=sys.stderr)
+      return []
+    df = pd.DataFrame(frames_emotions)
+    print("Video emotion analysis complete.", file=sys.stderr)
     stats = df.describe()
+    # pick top 2 dominant emotion labels if available
     emotions = stats.loc['mean'].nlargest(2).index.tolist()
     return emotions
+  except Exception as e:
+    print(f"video analysis failed: {e}", file=sys.stderr)
+    return []
 
 from ollama import chat
 from ollama import ChatResponse
 
-def chatbot_response(emotions, sentiment, text):
-  response: ChatResponse = chat(model='gemma3', messages=[
-    {
-      'role': 'system',
-      'content': f'Based on the user\'s two primary emotions {emotions[0]} and {emotions[1]} from the video analysis, and based on the sentiment of the text which is {sentiment}, generate a therapuetic, empathetic response to the user\'s words. Avoid asking follow-up questions (if waranted), but rather provide advice as a therapist would. Also, take notice of any inconsistencies in user sentiment vs. their facial emotion. The user said: {text}'
-    }
-  ])
-  # or access fields directly from the response object
-  print(response.message.content)
+def chatbot_response(emotions, sentiment, text, history=None):
+  # Safely handle missing or short emotions list
+  em1 = 'neutral'
+  em2 = 'neutral'
+  try:
+    if emotions and len(emotions) > 0:
+      em1 = emotions[0]
+    if emotions and len(emotions) > 1:
+      em2 = emotions[1]
+  except Exception:
+    em1 = em2 = 'neutral'
 
-record_video_and_audio() # record and capture the audio
-text = transcribe_audio()
-sentiment = determine_sentiment(text)
-chatbot_response(analyze_video_emotions(), sentiment, text)
+  try:
+    # Build messages with optional history; keep a helpful system prompt first
+    # build emotion description: omit the second emotion if it's neutral
+    if em2 and em2 != 'neutral':
+      emotions_desc = f"the user's primary emotions {em1} and {em2}"
+    else:
+      emotions_desc = f"the user's primary emotion {em1}"
+
+    system_msg = {
+      'role': 'system',
+      'content': (
+        f"Based on {emotions_desc} from the video analysis, and "
+        f"based on the sentiment of the text which is {sentiment}, be a therapeutic, empathetic assistant. "
+        f"Provide supportive advice and surface any inconsistencies between sentiment and facial emotion. "
+        f"If a follow-up question is necessary to clarify risk or safety, ask gently; otherwise prefer reflection and concrete coping suggestions."
+      )
+    }
+
+    msgs = [system_msg]
+    # Append any prior conversation messages (expects list of {role, content})
+    if history and isinstance(history, list):
+      for m in history:
+        # only allow role and content
+        if isinstance(m, dict) and 'role' in m and 'content' in m:
+          msgs.append({'role': m['role'], 'content': m['content']})
+
+    # append the current user utterance
+    msgs.append({'role': 'user', 'content': text})
+
+    response: ChatResponse = chat(model='gemma3', messages=msgs)
+    return response.message.content
+  except Exception as e:
+    print(f"chatbot error: {e}", file=sys.stderr)
+    return f"(chatbot error: {e})"
+
+def main(filepath):
+   text = transcribe_audio(filepath)
+   sentiment = determine_sentiment(text)
+   emotions = analyze_video_emotions(filepath)
+   response = chatbot_response(emotions, sentiment, text)
+   return {
+       "text": text,
+       "sentiment": sentiment,
+       "emotions": emotions,
+       "response": response
+   }
+
+  
+
+# import flask
+# from flask import Flask, render_template
+# import jsonify
+# from flask import request, jsonify
+
+# app = Flask(__name__)
+
+
+# if __name__ == '__main__':
+#   # Simple CLI wrapper so this module can be invoked from Node
+#   import sys
+#   import json
+#   from pathlib import Path
+#   import subprocess
+#   import tempfile
+
+#   if len(sys.argv) < 2:
+#     print(json.dumps({"error": "No video file path provided"}))
+#     sys.exit(1)
+
+#   video_file = sys.argv[1]
+#   video_path = Path(video_file)
+#   if not video_path.exists():
+#     print(json.dumps({"error": "Video file not found"}))
+#     sys.exit(1)
+
+#   # Extract audio to a temporary wav using ffmpeg (must be installed)
+#   with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmpwav:
+#     wav_path = tmpwav.name
+#   try:
+#     # ffmpeg -y -i input.mp4 -vn -acodec pcm_s16le -ar 44100 -ac 1 out.wav
+#     subprocess.check_call([
+#       'ffmpeg', '-y', '-i', str(video_path), '-vn', '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '1', wav_path
+#     ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+#   except Exception as e:
+#     # ffmpeg failures: emit JSON error to stdout for parser and log to stderr
+#     print(json.dumps({"error": f"ffmpeg failed: {e}"}))
+#     print(f"ffmpeg failed: {e}", file=sys.stderr)
+#     sys.exit(1)
+
+#   try:
+#     text = transcribe_audio(wav_path)
+#   except Exception as e:
+#     print(json.dumps({"error": f"transcription failed: {e}"}))
+#     print(f"transcription failed: {e}", file=sys.stderr)
+#     sys.exit(1)
+
+#   sentiment = determine_sentiment(text)
+
+#   try:
+#     emotions = analyze_video_emotions(str(video_path))
+#   except Exception as e:
+#     print(json.dumps({"error": f"video analysis failed: {e}"}))
+#     print(f"video analysis failed: {e}", file=sys.stderr)
+#     sys.exit(1)
+
+#   try:
+#     bot = chatbot_response(emotions, sentiment, text)
+#   except Exception as e:
+#     bot = f"chatbot error: {e}"
+#     print(f"chatbot error: {e}", file=sys.stderr)
+
+#   out = {
+#     "text": text,
+#     "sentiment": sentiment,
+#     "emotions": emotions,
+#     "response": bot
+#   }
+#   print(json.dumps(out))
+

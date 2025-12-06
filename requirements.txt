@@ -1,5 +1,4 @@
 # Core dependencies
-opencv-python
 requests
 pandas
 nltk
@@ -10,3 +9,5 @@ pyaudio
 # Machine Learning / AI
 fer
 ollama
+Flask
+flask-cors

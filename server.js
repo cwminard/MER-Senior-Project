@@ -12,7 +12,7 @@ import db from "./db.js";
 // --- config ---
 dotenv.config({ path: join(process.cwd(), "server", ".env") });
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8888;
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
 // --- middleware ---
@@ -49,6 +49,7 @@ app.post(
       const token = jwt.sign({ id, email }, JWT_SECRET, { expiresIn: "7d" });
       res.json({ token, user: { id, first, last, email, phone } });
     } catch (e) {
+      console.error("Signup error:", e);
       res.status(500).json({ error: "Signup failed", detail: e.message });
     }
   }

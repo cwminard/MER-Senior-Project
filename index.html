@@ -58,6 +58,10 @@
           <div class="stat-num">HIPAA-ish*</div>
           <div class="stat-label">Design mindset</div>
         </div>
+        </div>
+        <div class="blob">
+          <img src="blobby-the-blob.png" alt="Blobby the Blob" width="1224" height="816" class="hero-image">
+        </div>
       </div>
     </section>
 
@@ -165,25 +169,54 @@
 
     <!-- RecorderPage -->
     <section class="page card" data-view="recorder">
-      <h2 class="h2">Record a short check-in</h2>
-      <p class="lead">Use your webcam to capture a quick mood update. You can upload it to your profile privately.</p>
+      <h2 class="h2">How are you feeling today?</h2>
+      <p class="lead">Using your webcam, tell us about your current mood and thoughts.</p>
+      <div>
+        <p> </p>
+        <p> </p>
+      </div>
+      <div class="info-box">
+        <strong>Note:</strong> Recording may take a few moments to process. Ensure your camera and microphone are working properly.
+      </div>
+      <div>
+        <p> </p>
+        <p> </p>
+      </div>
 
       <div class="recorder">
         <video id="cam" playsinline autoplay muted></video>
 
-        <div class="controls row">
-          <button class="btn btn--primary" id="startRec">Start recording</button>
-          <button class="btn btn--ghost" id="stopRec" disabled>Stop</button>
+          <div class="controls row">
+          <button class="btn btn--primary btn-record btn-animated" id="startRec" aria-pressed="false">Start recording</button>
           <span class="timer" id="recTimer">00:00</span>
         </div>
 
-        <div class="preview" id="previewWrap" hidden>
-          <video id="preview" controls></video>
-          <div class="row">
-            <a class="btn btn--neutral" id="downloadBtn" download="checkin.webm">Download</a>
-            <button class="btn btn--primary" id="uploadBtn">Upload to account</button>
-          </div>
+        <!-- post-record controls: use the same video element (#cam) for playback -->
+        <div class="row" id="postControls">
+          <a class="btn btn--neutral" id="downloadBtn" download="checkin.webm">Download</a>
+          <button class="btn btn--primary" id="uploadBtn">Upload to account</button>
           <div class="muted" id="uploadMsg"></div>
+        </div>
+
+        <!-- Analysis response output -->
+        <div class="analysis-output" style="margin-top:12px;">
+          <div id="perceivedEmotions" class="muted" style="margin-bottom:8px;"></div>
+          <div id="therapistResponse" class="response-text" style="font-size:1rem; line-height:1.4; white-space:pre-wrap;">
+            <!-- typed response will appear here -->
+          </div>
+        </div>
+
+        <!-- Chat history + reply options -->
+        <div class="chat-box" style="margin-top:16px; border-top:1px solid #eee; padding-top:12px;">
+          <h3 style="margin:0 0 8px 0;">Conversation</h3>
+          <div id="chatHistory" style="max-height:220px; overflow:auto; padding:8px; background:#fafafa; border:1px solid #f0f0f0; border-radius:6px;"></div>
+
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <input id="chatInput" placeholder="Write a message or ask the therapist..." style="flex:1; padding:8px;" />
+            <button id="chatSend" class="btn btn--primary btn-animated">Send</button>
+            <button id="chatRecord" class="btn btn--neutral btn-animated">Record Reply</button>
+          </div>
+          <small class="muted">You can respond by text or record a short video reply.</small>
         </div>
 
         <details class="help">

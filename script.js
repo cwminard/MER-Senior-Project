@@ -1,4 +1,22 @@
-const API = ""; // same-origin (http://localhost:4000 in dev)
+// Use relative API paths so frontend and API can be served from the same origin
+const API = "";
+
+// Simple cancelable typewriter: call `startTyping(el, text, msPerChar)`.
+// If called again on the same element, the previous typing is cancelled.
+async function startTyping(el, text, ms = 24){
+  if (!el) return;
+  // cancel previous
+  el._typingToken = (el._typingToken || 0) + 1;
+  const token = el._typingToken;
+  el.textContent = '';
+  for (let i = 0; i < text.length; i++){
+    if (el._typingToken !== token) return; // cancelled
+    el.textContent += text[i];
+    await new Promise(r => setTimeout(r, ms));
+  }
+  // clear token on complete
+  if (el._typingToken === token) el._typingToken = null;
+}
 
 function authHeaders() {
   const t = localStorage.getItem("token");
@@ -6,32 +24,30 @@ function authHeaders() {
 }
 
 async function apiSignup(payload){
-  const r = await fetch(`${API}/api/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    if (Array.isArray(data.errors) && data.errors.length) {
-      throw new Error(data.errors[0].msg || "Invalid input");
-    }
-    throw new Error(data.error || "Signup failed");
-  }
-  localStorage.setItem("token", data.token);
-  return data.user;
+  // Development shortcut: don't call the server — immediately succeed
+  // Store a local token and return a minimal user object so the UI proceeds.
+  const fakeToken = `local-dev-${Date.now()}`;
+  localStorage.setItem("token", fakeToken);
+  return {
+    id: Date.now(),
+    first: payload.first || "Local",
+    last: payload.last || "User",
+    email: payload.email || "local@dev",
+    phone: payload.phone || null
+  };
 }
 
 async function apiLogin(email, password){
-  const r = await fetch(`${API}/api/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || "Login failed");
-  localStorage.setItem("token", data.token);
-  return data.user;
+  // Development shortcut: fake a successful login without server validation.
+  const fakeToken = `local-dev-${Date.now()}`;
+  localStorage.setItem("token", fakeToken);
+  return {
+    id: 1,
+    first: "Local",
+    last: "User",
+    email: email || "local@dev",
+    phone: null
+  };
 }
 
 async function apiMe(){
@@ -70,6 +86,153 @@ async function apiUpload(file){
   if(!r.ok) throw new Error(data.error || "Upload failed");
   return data; 
 }
+
+async function apiAnalyze(file){
+  const fd = new FormData();
+  fd.append('file', file, file.name || 'checkin.webm');
+  const r = await fetch(`${API}/record`, {
+    method: 'POST',
+    body: fd
+  });
+  // Try to parse JSON, but if parsing fails capture raw text for debugging
+  const text = await r.text().catch(() => '');
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch (e) { data = {}; }
+  if (!r.ok) {
+    const msg = data.error || data.detail || text || `Status ${r.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+// Chat API: send text or optional file, maintain session id in localStorage
+async function apiChatSend({session, text, file}){
+  const fd = new FormData();
+  if (session) fd.append('session', session);
+  if (text) fd.append('text', text);
+  if (file) fd.append('file', file, file.name || 'reply.mp4');
+  const r = await fetch(`${API}/chat`, { method: 'POST', body: fd });
+  const textResp = await r.text().catch(() => '');
+  let data = {};
+  try { data = textResp ? JSON.parse(textResp) : {}; } catch(e){ data = {}; }
+  if (!r.ok) {
+    const msg = data.error || data.detail || textResp || `Status ${r.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+function renderChatHistory(history){
+  const el = document.getElementById('chatHistory');
+  if (!el) return;
+  el.innerHTML = '';
+  history.forEach(m => {
+    const row = document.createElement('div');
+    row.style.marginBottom = '8px';
+    row.style.padding = '6px';
+    row.style.borderRadius = '6px';
+    row.style.fontSize = '0.95rem';
+    if (m.role === 'user'){
+      row.style.background = '#e8f0ff';
+      row.style.textAlign = 'right';
+      row.textContent = `You: ${m.content}`;
+    } else if (m.role === 'assistant'){
+      row.style.background = '#fff';
+      row.style.border = '1px solid #eee';
+      row.textContent = `Therapist: ${m.content}`;
+    } else if (m.role === 'system'){
+      row.style.background = '#fff8e6';
+      row.style.fontSize = '0.85rem';
+      row.textContent = m.content;
+    }
+    el.appendChild(row);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+function getChatSession(){
+  let s = localStorage.getItem('chat_session');
+  if (!s){ s = `sess-${Date.now()}`; localStorage.setItem('chat_session', s); }
+  return s;
+}
+
+// Utility to toggle a loading state on a button. Shows spinner and optional label.
+function setButtonLoading(btn, loading, label){
+  if (!btn) return;
+  if (loading){
+    if (!btn.dataset.origLabel) btn.dataset.origLabel = btn.textContent;
+    btn.classList.add('loading');
+    btn.setAttribute('aria-busy','true');
+    btn.disabled = true;
+    if (label) btn.textContent = label;
+    else btn.textContent = 'Thinking…';
+  } else {
+    btn.classList.remove('loading');
+    btn.setAttribute('aria-busy','false');
+    btn.disabled = false;
+    if (btn.dataset.origLabel){ btn.textContent = btn.dataset.origLabel; delete btn.dataset.origLabel; }
+  }
+}
+
+document.getElementById('chatSend')?.addEventListener('click', async () => {
+  const input = document.getElementById('chatInput');
+  if (!input) return;
+  const txt = input.value && input.value.trim();
+  if (!txt) return alert('Please type a message first.');
+  const session = getChatSession();
+  const chatEl = document.getElementById('chatHistory');
+  // Optimistically append user's message to the history and clear the input
+  if (chatEl) {
+    const userRow = document.createElement('div');
+    userRow.style.marginBottom = '8px';
+    userRow.style.padding = '6px';
+    userRow.style.borderRadius = '6px';
+    userRow.style.fontSize = '0.95rem';
+    userRow.style.background = '#e8f0ff';
+    userRow.style.textAlign = 'right';
+    userRow.textContent = `You: ${txt}`;
+    chatEl.appendChild(userRow);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+  input.value = '';
+  const sendBtn = document.getElementById('chatSend');
+  if (sendBtn) setButtonLoading(sendBtn, true, 'Thinking…');
+  try{
+    const res = await apiChatSend({ session, text: txt });
+    // server-provided history will replace optimistic UI (keeps things canonical)
+    if (res.history) renderChatHistory(res.history);
+    // show assistant reply in therapist area with typewriter
+    if (res.reply){
+      const therapistEl = document.getElementById('therapistResponse');
+      startTyping(therapistEl, res.reply || '(no response)');
+    }
+  }catch(err){
+    // On error, show alert and mark last optimistic message as failed
+    alert('Chat failed: ' + (err.message || err));
+    if (chatEl) {
+      const last = chatEl.lastElementChild;
+      if (last && last.textContent && last.textContent.startsWith('You:')){
+        last.style.opacity = '0.6';
+        last.title = 'Failed to send';
+      }
+    }
+  }finally{
+    if (sendBtn) setButtonLoading(sendBtn, false);
+  }
+});
+
+// (Reply-with-video button removed; sending occurs automatically when chat recording stops)
+
+// on load, try to fetch any existing history (noop if none)
+(async function loadChatOnBoot(){
+  const session = getChatSession();
+  try{
+    const r = await fetch(`${API}/chat?session=${session}`);
+    if (!r.ok) return;
+    const data = await r.json().catch(()=>({}));
+    if (data.history) renderChatHistory(data.history);
+  }catch(e){}
+})();
 
 /* Router   */
 const views = [...document.querySelectorAll(".page")];
@@ -171,7 +334,7 @@ signupForm?.addEventListener("submit", async (e) => {
       password
     });
     updateNavForAuth(true);
-    show("preferences"); 
+    show("recorder"); 
   }catch(err){
     alert(err.message || "Signup failed");
   }
@@ -234,10 +397,8 @@ profileForm?.addEventListener("submit", async (e) => {
 /*  Recorder (camera + MediaRecorder) */
 const camEl       = document.getElementById("cam");
 const startBtn    = document.getElementById("startRec");
-const stopBtn     = document.getElementById("stopRec");
 const timerEl     = document.getElementById("recTimer");
-const previewWrap = document.getElementById("previewWrap");
-const previewEl   = document.getElementById("preview");
+// preview elements removed; playback will reuse the live camera element (`#cam`)
 const downloadBtn = document.getElementById("downloadBtn");
 const uploadBtn   = document.getElementById("uploadBtn");
 const uploadMsg   = document.getElementById("uploadMsg");
@@ -247,6 +408,7 @@ let mediaRecorder = null;
 let chunks = [];
 let tickInterval = null;
 let startAt = 0;
+let recordingTarget = null; // 'recorder' | 'chat' | null
 
 function fmt(ms){
   const s = Math.floor(ms/1000);
@@ -270,74 +432,230 @@ async function ensureCamera(){
   }
 }
 
-startBtn?.addEventListener("click", () => {
-  if (!mediaStream) { alert("Camera not ready."); return; }
-  chunks = [];
-  if (previewWrap) previewWrap.hidden = true;
 
-  let options = { bitsPerSecond: 2_000_000 };
 
-  if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
-    options.mimeType = "video/webm;codecs=vp9";
-  } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
-    options.mimeType = "video/webm;codecs=vp8";
-  } else if (MediaRecorder.isTypeSupported("video/mp4")) {
-    // Safari usually likes mp4
-    options.mimeType = "video/mp4";
-  }
-  // If none are supported, we just don't set mimeType at all and let the browser pick.
-
+// Helpers to start/stop recording with target context
+async function startRecording(target){
+  if (!['recorder','chat'].includes(target)) target = 'recorder';
   try {
-    mediaRecorder = new MediaRecorder(mediaStream, options);
+    if (!mediaStream) {
+      await ensureCamera();
+      if (!mediaStream) { alert("Camera not ready."); return false; }
+    }
+
+    // reset previous chunks and playback
+    chunks = [];
+    if (camEl) {
+      camEl.srcObject = mediaStream;
+      camEl.muted = true;
+      camEl.controls = false;
+      try { camEl.src = ""; } catch (e) {}
+    }
+
+    let options = { bitsPerSecond: 2_000_000 };
+    if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+      options.mimeType = "video/webm;codecs=vp9";
+    } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+      options.mimeType = "video/webm;codecs=vp8";
+    } else if (MediaRecorder.isTypeSupported("video/mp4")) {
+      options.mimeType = "video/mp4";
+    }
+
+    try {
+      mediaRecorder = new MediaRecorder(mediaStream, options);
+    } catch (err) {
+      console.error("MediaRecorder init failed", err);
+      alert("Recording is not supported in this browser or with this format.");
+      return false;
+    }
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size) chunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "video/mp4" });
+      const url  = URL.createObjectURL(blob);
+      if (camEl) {
+        try { camEl.srcObject = null; } catch (e) {}
+        camEl.src = url;
+        camEl.controls = true;
+        camEl.muted = false;
+        camEl.play().catch(() => {});
+      }
+      if (downloadBtn) downloadBtn.href = url;
+      if (uploadMsg) uploadMsg.textContent = "";
+
+      // UI updates depending on which target initiated recording
+      if (recordingTarget === 'recorder'){
+        if (startBtn) {
+          startBtn.textContent = "Start recording";
+          startBtn.classList.remove('recording');
+          startBtn.setAttribute('aria-pressed','false');
+        }
+      } else if (recordingTarget === 'chat'){
+        const chatRecord = document.getElementById('chatRecord');
+        if (chatRecord) {
+          chatRecord.textContent = 'Record Reply';
+          chatRecord.classList.remove('recording');
+          chatRecord.setAttribute('aria-pressed','false');
+        }
+
+        // Auto-send the recorded clip as a chat reply
+        (async () => {
+          try{
+            const chatEl = document.getElementById('chatHistory');
+            // optimistic placeholder
+            if (chatEl) {
+              const userRow = document.createElement('div');
+              userRow.style.marginBottom = '8px';
+              userRow.style.padding = '6px';
+              userRow.style.borderRadius = '6px';
+              userRow.style.fontSize = '0.95rem';
+              userRow.style.background = '#e8f0ff';
+              userRow.style.textAlign = 'right';
+              userRow.textContent = `You: (video reply)`;
+              chatEl.appendChild(userRow);
+              chatEl.scrollTop = chatEl.scrollHeight;
+            }
+
+            const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'video/mp4' });
+            const file = new File([blob], `reply-${Date.now()}.mp4`, { type: mediaRecorder.mimeType || 'video/mp4' });
+            const session = getChatSession();
+            if (chatRecord) setButtonLoading(chatRecord, true, 'Sending…');
+            const res = await apiChatSend({ session, file });
+            if (res.history) renderChatHistory(res.history);
+            if (res.reply){
+              const therapistEl = document.getElementById('therapistResponse');
+              startTyping(therapistEl, res.reply || '(no response)');
+            }
+          }catch(err){
+            alert('Video chat failed: ' + (err.message || err));
+            const chatEl = document.getElementById('chatHistory');
+            if (chatEl) {
+              const last = chatEl.lastElementChild;
+              if (last && last.textContent && last.textContent.startsWith('You:')){
+                last.style.opacity = '0.6';
+                last.title = 'Failed to send video';
+              }
+            }
+          }finally{
+            if (chatRecord) setButtonLoading(chatRecord, false);
+          }
+        })();
+      }
+
+      // reset recording target
+      recordingTarget = null;
+    };
+
+    mediaRecorder.start();
+    recordingTarget = target;
+    startAt = Date.now();
+    if (timerEl) timerEl.textContent = "00:00";
+    tickInterval = setInterval(() => {
+      if (timerEl) timerEl.textContent = fmt(Date.now() - startAt);
+    }, 250);
+
+    // set button states for the initiating control
+    if (target === 'recorder' && startBtn) {
+      startBtn.textContent = "Stop recording";
+      startBtn.classList.add('recording');
+      startBtn.setAttribute('aria-pressed','true');
+    }
+    if (target === 'chat'){
+      const chatRecord = document.getElementById('chatRecord');
+      if (chatRecord) {
+        chatRecord.textContent = 'Stop recording';
+        chatRecord.classList.add('recording');
+        chatRecord.setAttribute('aria-pressed','true');
+      }
+    }
+    return true;
   } catch (err) {
-    console.error("MediaRecorder init failed", err);
-    alert("Recording is not supported in this browser or with this format.");
+    console.error(err);
+    alert("Recording failed to start.");
+    return false;
+  }
+}
+
+function stopRecording(){
+  try{
+    if (mediaRecorder && mediaRecorder.state === 'recording'){
+      mediaRecorder.stop();
+    }
+    if (tickInterval){ clearInterval(tickInterval); tickInterval = null; }
+  }catch(e){ console.error('stopRecording error', e); }
+}
+
+// Start/stop handler for main recorder button
+startBtn?.addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording'){
+    // if currently recording for recorder, stop; if recording for chat, alert
+    if (recordingTarget === 'recorder') { stopRecording(); }
+    else { alert('Another recording is in progress. Stop it first.'); }
     return;
   }
-
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data && e.data.size) chunks.push(e.data);
-  };
-
-  mediaRecorder.onstop = () => {
-    const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "video/mp4" });
-    const url  = URL.createObjectURL(blob);
-    if (previewEl) previewEl.src = url;
-    if (downloadBtn) downloadBtn.href = url;
-    if (previewWrap) previewWrap.hidden = false;
-  };
-
-  mediaRecorder.start();
-
-  startAt = Date.now();
-  if (timerEl) timerEl.textContent = "00:00";
-  tickInterval = setInterval(() => {
-    if (timerEl) timerEl.textContent = fmt(Date.now() - startAt);
-  }, 250);
-
-  if (startBtn) startBtn.disabled = true;
-  if (stopBtn)  stopBtn.disabled  = false;
+  // start recorder
+  await startRecording('recorder');
 });
 
-
-stopBtn?.addEventListener("click", () => {
-  if(mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-  clearInterval(tickInterval);
-  if (startBtn) startBtn.disabled = false;
-  if (stopBtn)  stopBtn.disabled  = true;
+// Chat record toggle
+document.getElementById('chatRecord')?.addEventListener('click', async () => {
+  const chatRecord = document.getElementById('chatRecord');
+  if (mediaRecorder && mediaRecorder.state === 'recording'){
+    if (recordingTarget === 'chat'){
+      stopRecording();
+    } else {
+      alert('Another recording is in progress. Stop it first.');
+    }
+    return;
+  }
+  // start chat-targeted recording
+  const ok = await startRecording('chat');
+  if (ok && chatRecord) {
+    // while recording, ensure send state is disabled visually
+    chatRecord.classList.add('recording');
+  }
 });
 
 uploadBtn?.addEventListener("click", async () => {
   if(!chunks.length){ alert("Record something first."); return; }
   const blob = new Blob(chunks, { type: "video/mp4" });
   const file = new File([blob], "checkin.mp4", { type: "video/mp4" });
-  if (uploadMsg) uploadMsg.textContent = "Uploading…";
+  if (uploadMsg) uploadMsg.textContent = "Analyzing…";
+  if (uploadBtn) uploadBtn.disabled = true;
   try{
-    const res = await apiUpload(file);
-    if (uploadMsg) uploadMsg.textContent = "Uploaded ✓";
-    console.log("File URL:", res.url);
+    const res = await apiAnalyze(file);
+    if (uploadMsg) uploadMsg.textContent = "Analysis complete ✓";
+    console.log("Analysis result:", res);
+    // Optionally display analysis in the UI
+    // Populate structured UI: perceived emotions + typed therapist response
+    const emotionsEl = document.getElementById('perceivedEmotions');
+    const therapistEl = document.getElementById('therapistResponse');
+    if (emotionsEl) {
+      const list = Array.isArray(res.emotions) ? res.emotions : (res.emotions ? [res.emotions] : []);
+      emotionsEl.textContent = list.length ? `Perceived emotions: ${list.join(', ')}` : 'Perceived emotions: (none detected)';
+    }
+    if (therapistEl) {
+      // typewriter effect
+      startTyping(therapistEl, res.response || '(no response)');
+    }
   }catch(err){
-    if (uploadMsg) uploadMsg.textContent = "Upload failed: " + (err.message || err);
+    if (uploadMsg) uploadMsg.textContent = "Analysis failed: " + (err.message || err);
+    console.error('Upload/analysis error:', err);
+    // show error details in the response pane as JSON where possible
+    const emotionsEl = document.getElementById('perceivedEmotions');
+    const therapistEl = document.getElementById('therapistResponse');
+    if (emotionsEl) emotionsEl.textContent = '';
+    if (therapistEl) {
+      // show error message (no typing)
+      therapistEl.textContent = (err && err.message) ? `Error: ${err.message}` : String(err);
+    }
+    alert('Upload failed: ' + (err.message || err));
+  }
+  finally {
+    if (uploadBtn) uploadBtn.disabled = false;
   }
 });
 

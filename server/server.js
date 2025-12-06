@@ -6,13 +6,14 @@ import { body, validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import multer from "multer";
+import { spawn, spawnSync } from "child_process";
 import { join } from "node:path";
 import db from "./db.js";
 
 // --- config ---
 dotenv.config({ path: join(process.cwd(), "server", ".env") });
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8888;
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
 // --- middleware ---
@@ -49,6 +50,7 @@ app.post(
       const token = jwt.sign({ id, email }, JWT_SECRET, { expiresIn: "7d" });
       res.json({ token, user: { id, first, last, email, phone } });
     } catch (e) {
+      console.error("Signup error:", e);
       res.status(500).json({ error: "Signup failed", detail: e.message });
     }
   }
@@ -160,6 +162,48 @@ app.post("/api/upload", auth, upload.single("file"), async (req, res) => {
     [req.user.id, req.file.originalname, req.file.filename, req.file.size]
   );
   res.json({ ok: true, url: `/uploads/${req.file.filename}` });
+});
+
+// Receive a recorded video, run Python analysis, return JSON
+app.post("/record", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    console.log(`/record received file: ${req.file.originalname} -> ${req.file.filename} (${req.file.size} bytes)`);
+    const filePath = join(process.cwd(), "server", "uploads", req.file.filename);
+    // Find a python executable (try common names)
+    const candidates = ['python', 'python3', 'py'];
+    let pyExec = null;
+    for (const c of candidates) {
+      try {
+        const s = spawnSync(c, ['--version'], { encoding: 'utf8' });
+        if (s.status === 0) { pyExec = c; break; }
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (!pyExec) return res.status(500).json({ error: 'No python executable found on server (tried python, python3, py)' });
+
+    // Spawn the Python process (ffmpeg and Python dependencies must be available)
+    console.log('Spawning python analysis with:', pyExec, join(process.cwd(), 'therapyAI.py'));
+    const py = spawn(pyExec, [join(process.cwd(), 'therapyAI.py'), filePath], { cwd: process.cwd(), env: process.env });
+    let out = '';
+    let err = '';
+    py.stdout.on('data', (d) => { out += d.toString(); });
+    py.stderr.on('data', (d) => { err += d.toString(); });
+    py.on('close', (code) => {
+      if (err) console.error('Python stderr:', err);
+      try {
+        const j = JSON.parse(out);
+        res.json(j);
+      } catch (e) {
+        console.error('Failed parsing python output', e, out);
+        res.status(500).json({ error: 'Python analysis failed', detail: out || err });
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Record processing failed', detail: e.message });
+  }
 });
 
 

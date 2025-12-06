@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 sqlite3.verbose();
-const dbFile = join(process.cwd(), "server", "data.sqlite3");
+const dbFile = join(process.cwd(), "server", "therapeutic_ai.sqlite3");
 const db = new sqlite3.Database(dbFile);
 
 // run schema once
